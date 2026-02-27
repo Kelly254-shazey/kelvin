@@ -461,7 +461,7 @@ export default function HomePage() {
   useEffect(() => {
     let mounted = true
 
-    Promise.all([
+    Promise.allSettled([
       publicApi.getContent(),
       publicApi.getBlogDocuments(),
       publicApi.getServices(),
@@ -470,24 +470,28 @@ export default function HomePage() {
       publicApi.getTestimonials(),
       publicApi.getVideos(),
     ])
-      .then(([contentData, blogDocumentData, serviceData, projectData, skillData, testimonialData, videoData]) => {
+      .then((results) => {
         if (!mounted) return
-        if (contentData) setContent((prev) => ({ ...prev, ...contentData }))
-        if (Array.isArray(blogDocumentData)) setExtraBlogDocuments(blogDocumentData)
-        if (Array.isArray(serviceData)) {
+        const [contentResult, blogResult, servicesResult, projectsResult, skillsResult, testimonialsResult, videosResult] = results
+        if (contentResult.status === 'fulfilled' && contentResult.value) {
+          setContent((prev) => ({ ...prev, ...contentResult.value }))
+        }
+        if (blogResult.status === 'fulfilled' && Array.isArray(blogResult.value)) {
+          setExtraBlogDocuments(blogResult.value)
+        }
+        if (servicesResult.status === 'fulfilled' && Array.isArray(servicesResult.value)) {
           setServices(
-            serviceData.map((item, index) => ({
+            servicesResult.value.map((item, index) => ({
               ...item,
               icon: item.icon || FALLBACK_SERVICES[index]?.icon || '◈',
             })),
           )
         }
-        if (Array.isArray(projectData)) setProjects(projectData)
-        if (Array.isArray(skillData)) setSkills(skillData)
-        if (Array.isArray(testimonialData)) setTestimonials(testimonialData)
-        if (Array.isArray(videoData)) setVideos(videoData)
+        if (projectsResult.status === 'fulfilled' && Array.isArray(projectsResult.value)) setProjects(projectsResult.value)
+        if (skillsResult.status === 'fulfilled' && Array.isArray(skillsResult.value)) setSkills(skillsResult.value)
+        if (testimonialsResult.status === 'fulfilled' && Array.isArray(testimonialsResult.value)) setTestimonials(testimonialsResult.value)
+        if (videosResult.status === 'fulfilled' && Array.isArray(videosResult.value)) setVideos(videosResult.value)
       })
-      .catch(() => {})
 
     return () => {
       mounted = false
