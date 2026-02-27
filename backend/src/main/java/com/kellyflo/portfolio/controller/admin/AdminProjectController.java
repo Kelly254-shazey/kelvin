@@ -42,7 +42,7 @@ public class AdminProjectController {
             @RequestParam(required = false) ProjectStatus status) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "updatedAt"));
-        return projectRepository.search(nullable(search), status, pageable);
+        return projectRepository.search(normalizeSearch(search), status, pageable);
     }
 
     @GetMapping("/{id}")
@@ -125,5 +125,10 @@ public class AdminProjectController {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String normalizeSearch(String value) {
+        String trimmed = value == null ? "" : value.trim();
+        return trimmed;
     }
 }

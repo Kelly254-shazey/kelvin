@@ -13,9 +13,9 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
 
     @Query("""
         SELECT p FROM Project p
-        WHERE (:query IS NULL OR lower(p.title) LIKE lower(concat('%', :query, '%'))
-        OR lower(p.summary) LIKE lower(concat('%', :query, '%'))
-        OR lower(p.slug) LIKE lower(concat('%', :query, '%')))
+        WHERE (:query = '' OR lower(p.title) LIKE concat('%', lower(:query), '%')
+        OR lower(p.summary) LIKE concat('%', lower(:query), '%')
+        OR lower(p.slug) LIKE concat('%', lower(:query), '%'))
         AND (:status IS NULL OR p.status = :status)
     """)
     Page<Project> search(@Param("query") String query, @Param("status") ProjectStatus status, Pageable pageable);

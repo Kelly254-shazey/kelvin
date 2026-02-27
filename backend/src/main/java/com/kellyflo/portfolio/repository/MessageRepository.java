@@ -11,9 +11,9 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
 
     @Query("""
         SELECT m FROM Message m
-        WHERE (:query IS NULL OR lower(m.name) LIKE lower(concat('%', :query, '%'))
-        OR lower(m.email) LIKE lower(concat('%', :query, '%'))
-        OR lower(m.subject) LIKE lower(concat('%', :query, '%')))
+        WHERE (:query = '' OR lower(m.name) LIKE concat('%', lower(:query), '%')
+        OR lower(m.email) LIKE concat('%', lower(:query), '%')
+        OR lower(m.subject) LIKE concat('%', lower(:query), '%'))
         AND (:read IS NULL OR m.isRead = :read)
     """)
     Page<Message> search(@Param("query") String query, @Param("read") Boolean read, Pageable pageable);

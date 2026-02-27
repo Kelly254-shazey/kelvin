@@ -40,7 +40,7 @@ public class AdminVideoController {
             @RequestParam(required = false) Boolean published) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        return videoRepository.search(nullable(search), nullable(category), published, pageable);
+        return videoRepository.search(normalizeSearch(search), normalizeSearch(category), published, pageable);
     }
 
     @GetMapping("/{id}")
@@ -85,11 +85,7 @@ public class AdminVideoController {
                 .orElseThrow(() -> new EntityNotFoundException("Video not found"));
     }
 
-    private String nullable(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
+    private String normalizeSearch(String value) {
+        return value == null ? "" : value.trim();
     }
 }

@@ -12,9 +12,9 @@ public interface VideoRepository extends JpaRepository<Video, Long> {
 
     @Query("""
         SELECT v FROM Video v
-        WHERE (:query IS NULL OR lower(v.title) LIKE lower(concat('%', :query, '%'))
-        OR lower(v.description) LIKE lower(concat('%', :query, '%')))
-        AND (:category IS NULL OR lower(v.category) = lower(:category))
+        WHERE (:query = '' OR lower(v.title) LIKE concat('%', lower(:query), '%')
+        OR lower(v.description) LIKE concat('%', lower(:query), '%'))
+        AND (:category = '' OR lower(v.category) = lower(:category))
         AND (:published IS NULL OR v.published = :published)
     """)
     Page<Video> search(@Param("query") String query, @Param("category") String category,

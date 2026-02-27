@@ -35,7 +35,7 @@ public class AdminMessageController {
             @RequestParam(required = false) Boolean read) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        return messageRepository.search(nullable(search), read, pageable);
+        return messageRepository.search(normalizeSearch(search), read, pageable);
     }
 
     @GetMapping("/{id}")
@@ -68,11 +68,7 @@ public class AdminMessageController {
                 .orElseThrow(() -> new EntityNotFoundException("Message not found"));
     }
 
-    private String nullable(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
+    private String normalizeSearch(String value) {
+        return value == null ? "" : value.trim();
     }
 }
