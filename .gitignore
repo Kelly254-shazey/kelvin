@@ -1,0 +1,39 @@
+# Backend
+backend/target/
+backend/.mvn/
+backend/mvnw
+backend/mvnw.cmd
+backend/.classpath
+backend/.factorypath
+backend/.project
+backend/.settings/
+backend/*.jks
+backend/data/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*.iml
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads and temp files
+uploads/
+*.tmp
+*.log
