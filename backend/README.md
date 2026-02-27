@@ -29,6 +29,7 @@
 ## Environment Configuration
 All values are mapped in `src/main/resources/application.properties`:
 - `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`
+- `DATABASE_URL` (Render-style `postgresql://...` also supported and auto-converted to JDBC)
 - `JWT_SECRET`, `JWT_EXPIRATION_MS`
 - `CORS_ALLOWED_ORIGINS`
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_AUTH`, `SMTP_STARTTLS`

@@ -1,7 +1,12 @@
-﻿import axios from 'axios'
+import axios from 'axios'
 import { getToken } from './auth'
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+const PROD_FALLBACK_API_BASE_URL = 'https://kelvin-3.onrender.com'
+const DEV_FALLBACK_API_BASE_URL = 'http://localhost:8080'
+
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.PROD ? PROD_FALLBACK_API_BASE_URL : DEV_FALLBACK_API_BASE_URL)
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -109,4 +114,5 @@ export function getPublicFileUrl(type) {
 export function getPublicBlogDocumentFileUrl(id) {
   return `${API_BASE_URL}/api/public/content/documents/${id}/file`
 }
+
 
