@@ -1,0 +1,12 @@
+.*
+target/
+node_modules/
+*.log
+*.md
+.mvn/
+mvnw
+mvnw.cmd
+.DS_Store
+Thumbs.db
+data/
+uploads/
