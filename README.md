@@ -27,12 +27,6 @@ mvn -f backend/pom.xml org.springframework.boot:spring-boot-maven-plugin:run
 cd frontend
 npm install
 npm run dev
-```
-
-## Default Admin Seed
-Created on first backend run if no admin exists:
-- Username: from `APP_ADMIN_USERNAME` (default `admin`)
-- Password: from `APP_ADMIN_PASSWORD` (default `Admin@12345`)
-- Email: from `APP_ADMIN_EMAIL` (default `admin@kellyflo.dev`)
+``
 
 Update these via environment variables before production use.
