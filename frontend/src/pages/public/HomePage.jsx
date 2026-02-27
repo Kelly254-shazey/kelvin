@@ -1,4 +1,4 @@
-import { AnimatePresence, motion as Motion } from 'framer-motion'
+import { AnimatePresence, motion as Motion, useReducedMotion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Navbar from '../../components/public/Navbar'
 import ConfirmDialog from '../../components/admin/ConfirmDialog'
@@ -165,7 +165,7 @@ function Particles() {
   const random = useMemo(() => createSeededRandom(12345), []);
   const particles = useMemo(
     () =>
-      Array.from({ length: 25 }).map((_, i) => ({
+      Array.from({ length: 16 }).map((_, i) => ({
         id: i,
         x: random() * 100,
         y: random() * 100,
@@ -195,7 +195,7 @@ function NeonFloatingLights() {
   const random = useMemo(() => createSeededRandom(54321), []);
   const lights = useMemo(
     () =>
-      Array.from({ length: 12 }).map((_, i) => ({
+      Array.from({ length: 7 }).map((_, i) => ({
         id: i,
         x: random() * 100,
         y: random() * 100,
@@ -245,7 +245,13 @@ function StackedProfile({ tags, profileImageUrl }) {
       {/* Profile Image - Prominent on the right */}
       <div className="absolute right-0 top-1/2 z-40 h-[280px] w-[280px] -translate-y-1/2 rounded-full border-2 border-[#00F5D4]/50 bg-[#050B18]/50 p-3 shadow-[0_0_60px_rgba(0,245,212,0.4)] backdrop-blur-sm">
         <div className="h-full w-full overflow-hidden rounded-full border border-white/20 shadow-[inset_0_0_40px_rgba(0,245,212,0.2)]">
-          <img src={profileImageUrl} alt="Kelvin Simiyu" className="h-full w-full object-cover" />
+          <img
+            src={profileImageUrl}
+            alt="Kelvin Simiyu"
+            fetchPriority="high"
+            decoding="async"
+            className="h-full w-full object-cover"
+          />
         </div>
       </div>
 
@@ -298,11 +304,11 @@ function StatCard({ value, label }) {
   )
 }
 
-function ServiceCard({ service }) {
+function ServiceCard({ service, liteMotionMode }) {
   return (
     <Motion.div
-      whileHover={{ y: -10, boxShadow: '0 0 50px rgba(0, 245, 212, 0.15)' }}
-      transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+      whileHover={liteMotionMode ? undefined : { y: -10, boxShadow: '0 0 50px rgba(0, 245, 212, 0.15)' }}
+      transition={liteMotionMode ? undefined : { type: 'spring', stiffness: 200, damping: 20 }}
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-100px' }}
@@ -457,6 +463,24 @@ export default function HomePage() {
   const [contactNotice, setContactNotice] = useState(null)
   const [sending, setSending] = useState(false)
   const [contactConfirmDialog, setContactConfirmDialog] = useState({ isOpen: false, submitting: false })
+  const prefersReducedMotion = useReducedMotion()
+  const [isCompactViewport, setIsCompactViewport] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.matchMedia('(max-width: 1024px)').matches
+  })
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+    const mediaQuery = window.matchMedia('(max-width: 1024px)')
+    const onChange = (event) => setIsCompactViewport(event.matches)
+    setIsCompactViewport(mediaQuery.matches)
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', onChange)
+      return () => mediaQuery.removeEventListener('change', onChange)
+    }
+    mediaQuery.addListener(onChange)
+    return () => mediaQuery.removeListener(onChange)
+  }, [])
 
   useEffect(() => {
     let mounted = true
@@ -640,6 +664,7 @@ export default function HomePage() {
   ])
 
   const activeTestimonial = testimonials[testimonialIndex] || FALLBACK_TESTIMONIALS[0]
+  const liteMotionMode = prefersReducedMotion || isCompactViewport
 
   const handleContactChange = (event) => {
     const { name, value } = event.target
@@ -672,14 +697,17 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#030815] text-white selection:bg-[#00F5D4] selection:text-[#050B18] overflow-x-hidden">
       <div className="fixed inset-0 z-0 pointer-events-none">
-         {/* Brighter background gradients */}
-         <div className="absolute top-[-10%] left-[-10%] h-[600px] w-[600px] rounded-full bg-[#00F5D4]/25 blur-[120px]" />
-         <div className="absolute bottom-[10%] right-[-5%] h-[500px] w-[500px] rounded-full bg-[#00C2FF]/25 blur-[100px]" />
-         <div className="absolute top-[20%] right-[20%] h-[300px] w-[300px] rounded-full bg-[#7000ff]/20 blur-[80px]" />
-         <div className="absolute top-[40%] left-[10%] h-[400px] w-[400px] rounded-full bg-[#FF006E]/15 blur-[90px]" />
-         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10"></div>
-         <Particles />
-         <NeonFloatingLights />
+         <div className="absolute top-[-10%] left-[-10%] h-[600px] w-[600px] rounded-full bg-[#00F5D4]/20 blur-[120px]" />
+         <div className="absolute bottom-[10%] right-[-5%] h-[500px] w-[500px] rounded-full bg-[#00C2FF]/20 blur-[100px]" />
+         {!liteMotionMode ? (
+           <>
+             <div className="absolute top-[20%] right-[20%] h-[300px] w-[300px] rounded-full bg-[#7000ff]/20 blur-[80px]" />
+             <div className="absolute top-[40%] left-[10%] h-[400px] w-[400px] rounded-full bg-[#FF006E]/15 blur-[90px]" />
+             <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10" />
+             <Particles />
+             <NeonFloatingLights />
+           </>
+         ) : null}
       </div>
 
       <Navbar brandName={content.brandName} hireCtaText={content.navHireCtaText} />
@@ -705,7 +733,7 @@ export default function HomePage() {
             <div className="mt-8 flex flex-wrap gap-4">
               <Motion.a
                 href={content.heroPrimaryCtaLink || '#work'}
-                whileHover={{ scale: 1.05 }}
+                whileHover={liteMotionMode ? undefined : { scale: 1.05 }}
                 whileTap={{ scale: 0.98 }}
                 className="group relative overflow-hidden rounded-full border border-[#00F5D4]/40 bg-[#00F5D4]/5 px-8 py-4 text-sm font-bold text-[#00F5D4] transition-all hover:bg-[#00F5D4]/10 hover:shadow-[0_0_30px_rgba(0,245,212,0.3)]"
               >
@@ -713,10 +741,14 @@ export default function HomePage() {
               </Motion.a>
               <Motion.a
                 href={content.heroSecondaryCtaLink || '#contact'}
-                whileHover={{ scale: 1.05 }}
+                whileHover={liteMotionMode ? undefined : { scale: 1.05 }}
                 whileTap={{ scale: 0.98 }}
-                animate={{ boxShadow: ['0 0 20px rgba(0,245,212,0.3)', '0 0 35px rgba(0,245,212,0.6)', '0 0 20px rgba(0,245,212,0.3)'] }}
-                transition={{ duration: 2, repeat: Infinity }}
+                animate={
+                  liteMotionMode
+                    ? undefined
+                    : { boxShadow: ['0 0 20px rgba(0,245,212,0.3)', '0 0 35px rgba(0,245,212,0.6)', '0 0 20px rgba(0,245,212,0.3)'] }
+                }
+                transition={liteMotionMode ? undefined : { duration: 2, repeat: Infinity }}
                 className="rounded-full bg-[#00F5D4] px-8 py-4 text-sm font-bold text-[#050B18]"
               >
                 {content.heroSecondaryCtaText}
@@ -768,7 +800,7 @@ export default function HomePage() {
           <div className="absolute bottom-0 left-[-100px] -z-10 h-[300px] w-[300px] rounded-full bg-gradient-to-tr from-[#00F5D4]/20 to-transparent blur-[60px] opacity-60" />
         </section>
 
-        <section id="about" className="mx-auto w-full max-w-[1200px] px-4 pb-10 pt-2 md:px-8">
+        <section id="about" className="section-deferred mx-auto w-full max-w-[1200px] px-4 pb-10 pt-2 md:px-8">
           <Motion.h2 
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -795,7 +827,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="services" className="mx-auto w-full max-w-[1200px] px-4 pb-16 md:px-8">
+        <section id="services" className="section-deferred mx-auto w-full max-w-[1200px] px-4 pb-16 md:px-8">
           <Motion.h2 
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -807,12 +839,12 @@ export default function HomePage() {
           </Motion.h2>
           <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
             {serviceList.map((service) => (
-              <ServiceCard key={service.id || service.title} service={service} />
+              <ServiceCard key={service.id || service.title} service={service} liteMotionMode={liteMotionMode} />
             ))}
           </div>
         </section>
 
-        <section id="work" className="mx-auto w-full max-w-[1200px] px-4 pb-16 md:px-8">
+        <section id="work" className="section-deferred mx-auto w-full max-w-[1200px] px-4 pb-16 md:px-8">
           <h2 className="text-center text-3xl font-semibold tracking-tight text-white md:text-[52px]">{content.workTitle}</h2>
 
           <div className="mt-6 flex flex-wrap justify-center gap-3">
@@ -835,12 +867,16 @@ export default function HomePage() {
           <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
             {filteredProjects.map((project) => (
               <div key={project.id || project.slug} className="overflow-hidden rounded-[24px] border border-white/10 bg-white/5 backdrop-blur-xl transition-all hover:border-[#00F5D4]/30 hover:bg-white/8">
-                <div
-                  className="h-44 bg-cover bg-center"
-                  style={{
-                    backgroundImage: `linear-gradient(to top, rgba(2,7,18,0.8), rgba(2,7,18,0.2)), url(${project.thumbnailUrl})`,
-                  }}
-                />
+                <div className="relative h-44">
+                  <img
+                    src={project.thumbnailUrl}
+                    alt={project.title}
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#020712]/80 to-[#020712]/20" />
+                </div>
                 <div className="p-5">
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <h3 className="text-lg font-bold text-white">{project.title}</h3>
@@ -864,7 +900,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="skills" className="mx-auto w-full max-w-[1200px] px-4 pb-16 md:px-8">
+        <section id="skills" className="section-deferred mx-auto w-full max-w-[1200px] px-4 pb-16 md:px-8">
           <h2 className="text-center text-3xl font-semibold tracking-tight text-white md:text-[52px]">{content.skillsTitle}</h2>
           <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
             {Object.entries(groupedSkills).map(([category, list]) => (
@@ -886,13 +922,15 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="testimonials" className="mx-auto w-full max-w-[1200px] px-4 pb-16 md:px-8">
+        <section id="testimonials" className="section-deferred mx-auto w-full max-w-[1200px] px-4 pb-16 md:px-8">
           <h2 className="text-center text-3xl font-semibold tracking-tight text-white md:text-[52px]">{content.testimonialsTitle}</h2>
 
           <div className="mx-auto mt-8 max-w-3xl rounded-[24px] border border-white/10 bg-white/5 p-10 text-center backdrop-blur-xl">
             <img
               src={activeTestimonial.avatarUrl || 'https://randomuser.me/api/portraits/men/11.jpg'}
               alt={activeTestimonial.name}
+              loading="lazy"
+              decoding="async"
               className="mx-auto h-16 w-16 rounded-full border border-white/20 object-cover"
             />
             <p className="mt-5 text-lg leading-relaxed text-slate-100">&ldquo;{activeTestimonial.quote}&rdquo;</p>
@@ -901,7 +939,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="videos" className="mx-auto w-full max-w-[1200px] px-4 pb-16 md:px-8">
+        <section id="videos" className="section-deferred mx-auto w-full max-w-[1200px] px-4 pb-16 md:px-8">
           <h2 className="text-center text-3xl font-semibold tracking-tight text-white md:text-[52px]">{content.videosTitle}</h2>
 
           <div className="mt-6 flex flex-wrap justify-center gap-3">
@@ -929,13 +967,16 @@ export default function HomePage() {
                 onClick={() => openVideo(video)}
                 className="overflow-hidden rounded-[24px] border border-white/10 bg-white/5 text-left backdrop-blur-xl transition-all hover:border-[#00F5D4]/30 hover:bg-white/8"
               >
-                <div
-                  className="h-44 bg-cover bg-center"
-                  style={{
-                    backgroundImage: `linear-gradient(to top, rgba(2,7,18,0.74), rgba(2,7,18,0.2)), url(${video.thumbnailUrl})`,
-                  }}
-                >
-                  <div className="flex h-full items-center justify-center">
+                <div className="relative h-44">
+                  <img
+                    src={video.thumbnailUrl}
+                    alt={video.title}
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#020712]/75 to-[#020712]/20" />
+                  <div className="absolute inset-0 flex items-center justify-center">
                     <span className="rounded-full border border-[#00F5D4]/40 bg-[#00F5D4]/10 px-4 py-2 text-sm font-semibold text-[#00F5D4]">
                       Play
                     </span>
@@ -951,7 +992,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="blog" className="mx-auto w-full max-w-[1200px] px-4 pb-20 md:px-8">
+        <section id="blog" className="section-deferred mx-auto w-full max-w-[1200px] px-4 pb-20 md:px-8">
           <h2 className="text-center text-3xl font-semibold tracking-tight text-white md:text-[52px]">Blog Docs</h2>
           <p className="mx-auto mt-4 max-w-2xl text-center text-sm text-slate-300 md:text-base">
             Read Resume, CV, and extra blog documents directly here. Download is available only when enabled by admin.
@@ -996,7 +1037,7 @@ export default function HomePage() {
           )}
         </section>
 
-        <section id="contact" className="mx-auto w-full max-w-[1200px] px-4 pb-12 md:px-8">
+        <section id="contact" className="section-deferred mx-auto w-full max-w-[1200px] px-4 pb-12 md:px-8">
           <h2 className="text-center text-3xl font-semibold tracking-tight text-white md:text-[52px]">{content.contactTitle}</h2>
 
           <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-5">

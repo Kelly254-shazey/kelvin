@@ -39,6 +39,14 @@ export default function AdminMessagesPage() {
     load()
   }, [load])
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
+      load()
+    }, 30000)
+    return () => clearInterval(timer)
+  }, [load])
+
   const openMessage = async (id) => {
     try {
       const message = await adminApi.getMessage(id)
@@ -119,6 +127,13 @@ export default function AdminMessagesPage() {
           <option value="false">Unread</option>
           <option value="true">Read</option>
         </select>
+        <button
+          type="button"
+          onClick={() => load({ page: 0 })}
+          className="rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold text-slate-100 transition hover:bg-white/15"
+        >
+          Refresh
+        </button>
       </div>
 
       {error ? <p className="text-sm text-rose-300">{error}</p> : null}

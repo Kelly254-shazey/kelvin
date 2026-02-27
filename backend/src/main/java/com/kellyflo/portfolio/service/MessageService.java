@@ -4,6 +4,8 @@ import com.kellyflo.portfolio.dto.ContactMessageRequest;
 import com.kellyflo.portfolio.model.Message;
 import com.kellyflo.portfolio.repository.MessageRepository;
 import jakarta.mail.internet.MimeMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -13,6 +15,8 @@ import org.springframework.util.StringUtils;
 
 @Service
 public class MessageService {
+
+    private static final Logger log = LoggerFactory.getLogger(MessageService.class);
 
     private final MessageRepository messageRepository;
     private final JavaMailSender mailSender;
@@ -41,7 +45,11 @@ public class MessageService {
         Message saved = messageRepository.save(message);
 
         if (StringUtils.hasText(smtpUsername) && StringUtils.hasText(mailTo)) {
-            sendEmail(saved);
+            try {
+                sendEmail(saved);
+            } catch (Exception ex) {
+                log.warn("Message {} saved but email notification failed: {}", saved.getId(), ex.getMessage());
+            }
         }
 
         return saved;
@@ -58,7 +66,7 @@ public class MessageService {
             helper.setText(buildMailBody(message), false);
             mailSender.send(mimeMessage);
         } catch (Exception ex) {
-            throw new IllegalStateException("Message saved but email notification failed. Check SMTP configuration.", ex);
+            throw new IllegalStateException("Email notification failed", ex);
         }
     }
 
