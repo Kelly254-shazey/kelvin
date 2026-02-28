@@ -35,8 +35,8 @@ public class AdminContentController {
     @GetMapping
     public SiteContent getContent() {
         SiteContent content = siteContentRepository.findTopByOrderByIdAsc().orElseGet(() -> {
-            SiteContent content = new SiteContent();
-            return siteContentRepository.save(content);
+            SiteContent newContent = new SiteContent();
+            return siteContentRepository.save(newContent);
         });
 
         if (cleanupMissingFiles(content)) {
