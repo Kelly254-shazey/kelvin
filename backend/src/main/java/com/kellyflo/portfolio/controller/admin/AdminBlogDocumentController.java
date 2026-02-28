@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -39,7 +40,23 @@ public class AdminBlogDocumentController {
 
     @GetMapping
     public List<BlogDocument> list() {
-        return blogDocumentRepository.findAllByOrderByDisplayOrderAscIdAsc();
+        List<BlogDocument> documents = blogDocumentRepository.findAllByOrderByDisplayOrderAscIdAsc();
+        List<BlogDocument> available = new ArrayList<>();
+        List<BlogDocument> missing = new ArrayList<>();
+
+        for (BlogDocument document : documents) {
+            if (fileStorageService.exists(document.getStoredName())) {
+                available.add(document);
+            } else {
+                missing.add(document);
+            }
+        }
+
+        if (!missing.isEmpty()) {
+            blogDocumentRepository.deleteAll(missing);
+        }
+
+        return available;
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

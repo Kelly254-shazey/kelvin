@@ -1,7 +1,7 @@
 package com.kellyflo.portfolio.controller.admin;
 
 import java.util.Map;
-
+import org.springframework.util.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -34,10 +34,15 @@ public class AdminContentController {
 
     @GetMapping
     public SiteContent getContent() {
-        return siteContentRepository.findTopByOrderByIdAsc().orElseGet(() -> {
+        SiteContent content = siteContentRepository.findTopByOrderByIdAsc().orElseGet(() -> {
             SiteContent content = new SiteContent();
             return siteContentRepository.save(content);
         });
+
+        if (cleanupMissingFiles(content)) {
+            return siteContentRepository.save(content);
+        }
+        return content;
     }
 
     @PutMapping
@@ -153,5 +158,27 @@ public class AdminContentController {
             throw new IllegalArgumentException("Invalid file type. Use 'resume' or 'cv'.");
         }
         return normalized;
+    }
+
+    private boolean cleanupMissingFiles(SiteContent content) {
+        boolean changed = false;
+
+        if (StringUtils.hasText(content.getResumeStoredName()) && !fileStorageService.exists(content.getResumeStoredName())) {
+            content.setResumeOriginalName(null);
+            content.setResumeStoredName(null);
+            content.setResumeVisible(false);
+            content.setResumeDownloadEnabled(false);
+            changed = true;
+        }
+
+        if (StringUtils.hasText(content.getCvStoredName()) && !fileStorageService.exists(content.getCvStoredName())) {
+            content.setCvOriginalName(null);
+            content.setCvStoredName(null);
+            content.setCvVisible(false);
+            content.setCvDownloadEnabled(false);
+            changed = true;
+        }
+
+        return changed;
     }
 }

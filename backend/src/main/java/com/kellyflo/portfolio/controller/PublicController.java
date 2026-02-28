@@ -17,6 +17,7 @@ import com.kellyflo.portfolio.repository.TestimonialRepository;
 import com.kellyflo.portfolio.repository.VideoRepository;
 import com.kellyflo.portfolio.service.FileStorageService;
 import jakarta.persistence.EntityNotFoundException;
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ContentDisposition;
@@ -92,12 +93,18 @@ public class PublicController {
 
     @GetMapping("/content")
     public SiteContent content() {
-        return siteContentRepository.findTopByOrderByIdAsc().orElseGet(SiteContent::new);
+        SiteContent content = siteContentRepository.findTopByOrderByIdAsc().orElseGet(SiteContent::new);
+
+        if (content.getId() != null && cleanupMissingContentFiles(content)) {
+            return siteContentRepository.save(content);
+        }
+
+        return content;
     }
 
     @GetMapping("/content/documents")
     public List<PublicDocumentResponse> contentDocuments() {
-        return blogDocumentRepository.findByVisibleTrueOrderByDisplayOrderAscIdAsc().stream()
+        return cleanupMissingBlogDocuments(blogDocumentRepository.findByVisibleTrueOrderByDisplayOrderAscIdAsc()).stream()
                 .map(item -> new PublicDocumentResponse(
                         item.getId(),
                         item.getTitle(),
@@ -201,6 +208,47 @@ public class PublicController {
             return MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
         }
         return MediaType.APPLICATION_OCTET_STREAM;
+    }
+
+    private boolean cleanupMissingContentFiles(SiteContent content) {
+        boolean changed = false;
+
+        if (StringUtils.hasText(content.getResumeStoredName()) && !fileStorageService.exists(content.getResumeStoredName())) {
+            content.setResumeOriginalName(null);
+            content.setResumeStoredName(null);
+            content.setResumeVisible(false);
+            content.setResumeDownloadEnabled(false);
+            changed = true;
+        }
+
+        if (StringUtils.hasText(content.getCvStoredName()) && !fileStorageService.exists(content.getCvStoredName())) {
+            content.setCvOriginalName(null);
+            content.setCvStoredName(null);
+            content.setCvVisible(false);
+            content.setCvDownloadEnabled(false);
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    private List<BlogDocument> cleanupMissingBlogDocuments(List<BlogDocument> documents) {
+        List<BlogDocument> available = new ArrayList<>();
+        List<BlogDocument> missing = new ArrayList<>();
+
+        for (BlogDocument document : documents) {
+            if (fileStorageService.exists(document.getStoredName())) {
+                available.add(document);
+            } else {
+                missing.add(document);
+            }
+        }
+
+        if (!missing.isEmpty()) {
+            blogDocumentRepository.deleteAll(missing);
+        }
+
+        return available;
     }
 
     private static class FileInfo {

@@ -78,6 +78,19 @@ public class FileStorageService {
         }
     }
 
+    public boolean exists(String storedName) {
+        if (!StringUtils.hasText(storedName)) {
+            return false;
+        }
+
+        try {
+            Path filePath = storageDir.resolve(storedName).normalize();
+            return filePath.startsWith(storageDir) && Files.exists(filePath) && Files.isReadable(filePath);
+        } catch (RuntimeException ex) {
+            return false;
+        }
+    }
+
     public void deleteIfExists(String storedName) {
         if (!StringUtils.hasText(storedName)) {
             return;
