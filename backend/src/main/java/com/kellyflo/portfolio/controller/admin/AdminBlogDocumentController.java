@@ -76,8 +76,12 @@ public class AdminBlogDocumentController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         BlogDocument existing = findById(id);
-        fileStorageService.deleteIfExists(existing.getStoredName());
         blogDocumentRepository.delete(existing);
+        try {
+            fileStorageService.deleteIfExists(existing.getStoredName());
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            // The DB record should still be removable even if the file is already missing.
+        }
         return ResponseEntity.noContent().build();
     }
 

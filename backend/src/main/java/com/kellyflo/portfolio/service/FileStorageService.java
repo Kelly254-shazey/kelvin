@@ -1,5 +1,6 @@
 package com.kellyflo.portfolio.service;
 
+import jakarta.persistence.EntityNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -58,7 +59,7 @@ public class FileStorageService {
 
     public Resource loadAsResource(String storedName) {
         if (!StringUtils.hasText(storedName)) {
-            throw new IllegalArgumentException("File not found.");
+            throw new EntityNotFoundException("File not found.");
         }
 
         try {
@@ -69,7 +70,7 @@ public class FileStorageService {
 
             Resource resource = new UrlResource(filePath.toUri());
             if (!resource.exists() || !resource.isReadable()) {
-                throw new IllegalArgumentException("File not found.");
+                throw new EntityNotFoundException("File not found.");
             }
             return resource;
         } catch (IOException ex) {
