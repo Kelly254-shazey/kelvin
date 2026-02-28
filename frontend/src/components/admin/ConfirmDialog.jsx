@@ -5,14 +5,14 @@ export default function ConfirmDialog({ isOpen, title, message, confirmText = 'C
     <AnimatePresence>
       {isOpen && (
         <>
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onCancel}
             className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
           />
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -45,7 +45,7 @@ export default function ConfirmDialog({ isOpen, title, message, confirmText = 'C
                 </button>
               </div>
             </div>
-          </motion.div>
+          </Motion.div>
         </>
       )}
     </AnimatePresence>
