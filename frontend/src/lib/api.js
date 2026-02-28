@@ -14,7 +14,9 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = getToken()
-  if (token) {
+  const requiresAuth = config.url?.startsWith('/api/admin')
+
+  if (token && requiresAuth) {
     config.headers.Authorization = `Bearer ${token}`
   }
   return config
