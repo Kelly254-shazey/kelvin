@@ -10,13 +10,13 @@ export default function ConfirmDialog({ isOpen, title, message, confirmText = 'C
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onCancel}
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[140] bg-black/60 backdrop-blur-sm"
           />
           <Motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 z-[150] flex items-center justify-center p-4"
           >
             <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#050B18]/95 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.8)] backdrop-blur-xl">
               <h2 className="text-xl font-bold text-white">{title}</h2>

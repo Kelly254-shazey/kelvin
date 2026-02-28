@@ -1,5 +1,5 @@
 import { AnimatePresence, motion as Motion, useReducedMotion } from 'framer-motion'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Navbar from '../../components/public/Navbar'
 import ConfirmDialog from '../../components/admin/ConfirmDialog'
 import { getApiError, getPublicBlogDocumentFileUrl, getPublicFileUrl, publicApi } from '../../lib/api'
@@ -161,11 +161,38 @@ function createSeededRandom(seed) {
   };
 }
 
+function lockBodyScroll() {
+  if (typeof document === 'undefined') return () => {}
+
+  const { body } = document
+  const currentLocks = Number(body.dataset.scrollLockCount || '0')
+
+  if (currentLocks === 0) {
+    body.dataset.scrollLockPreviousOverflow = body.style.overflow || ''
+    body.style.overflow = 'hidden'
+  }
+
+  body.dataset.scrollLockCount = String(currentLocks + 1)
+
+  return () => {
+    const nextLocks = Math.max(Number(body.dataset.scrollLockCount || '1') - 1, 0)
+
+    if (nextLocks === 0) {
+      body.style.overflow = body.dataset.scrollLockPreviousOverflow || ''
+      delete body.dataset.scrollLockCount
+      delete body.dataset.scrollLockPreviousOverflow
+      return
+    }
+
+    body.dataset.scrollLockCount = String(nextLocks)
+  }
+}
+
 function Particles() {
   const random = useMemo(() => createSeededRandom(12345), []);
   const particles = useMemo(
     () =>
-      Array.from({ length: 16 }).map((_, i) => ({
+      Array.from({ length: 10 }).map((_, i) => ({
         id: i,
         x: random() * 100,
         y: random() * 100,
@@ -195,7 +222,7 @@ function NeonFloatingLights() {
   const random = useMemo(() => createSeededRandom(54321), []);
   const lights = useMemo(
     () =>
-      Array.from({ length: 7 }).map((_, i) => ({
+      Array.from({ length: 4 }).map((_, i) => ({
         id: i,
         x: random() * 100,
         y: random() * 100,
@@ -329,7 +356,7 @@ function VideoModal({ video, onClose }) {
   return (
     <AnimatePresence>
       <Motion.div
-        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4"
+        className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -339,7 +366,7 @@ function VideoModal({ video, onClose }) {
           initial={{ scale: 0.96, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.96, opacity: 0 }}
-          className="w-full max-w-5xl rounded-[24px] border border-white/20 bg-[#061529]/92 p-4 shadow-[0_30px_80px_rgba(0,0,0,0.55)]"
+          className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-[24px] border border-white/20 bg-[#061529]/92 p-4 shadow-[0_30px_80px_rgba(0,0,0,0.55)]"
           onClick={(event) => event.stopPropagation()}
         >
           <div className="mb-3 flex items-center justify-between">
@@ -357,6 +384,7 @@ function VideoModal({ video, onClose }) {
               src={getEmbedUrl(video.videoUrl)}
               title={video.title}
               className="absolute inset-0 h-full w-full"
+              loading="lazy"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             />
@@ -373,27 +401,32 @@ function getFileExtension(fileName = '') {
   return idx >= 0 ? fileName.slice(idx + 1).toLowerCase() : ''
 }
 
-function DocumentModal({ documentItem, onClose }) {
+function DocumentModal({ documentItem, onClose, useInlinePreview = true, liteMotion = false }) {
   if (!documentItem) return null
 
   const extension = getFileExtension(documentItem.fileName)
   const isPdf = extension === 'pdf'
   const previewUrl = documentItem.readUrl
+  const showInlinePreview = isPdf && useInlinePreview
+  const overlayInitial = liteMotion ? false : { opacity: 0 }
+  const dialogInitial = liteMotion ? false : { scale: 0.96, opacity: 0 }
+  const dialogAnimate = { opacity: 1, ...(liteMotion ? {} : { scale: 1 }) }
+  const dialogExit = liteMotion ? { opacity: 0 } : { scale: 0.96, opacity: 0 }
 
   return (
     <AnimatePresence>
       <Motion.div
-        className="fixed inset-0 z-[110] flex items-center justify-center bg-black/85 p-4"
-        initial={{ opacity: 0 }}
+        className="fixed inset-0 z-[130] flex items-center justify-center bg-black/85 p-4"
+        initial={overlayInitial}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
       >
         <Motion.div
-          initial={{ scale: 0.96, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.96, opacity: 0 }}
-          className="w-full max-w-5xl rounded-[24px] border border-white/20 bg-[#061529]/96 p-4 shadow-[0_30px_80px_rgba(0,0,0,0.55)]"
+          initial={dialogInitial}
+          animate={dialogAnimate}
+          exit={dialogExit}
+          className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-[24px] border border-white/20 bg-[#061529]/96 p-4 shadow-[0_30px_80px_rgba(0,0,0,0.55)]"
           onClick={(event) => event.stopPropagation()}
         >
           <div className="mb-3 flex items-center justify-between">
@@ -407,21 +440,32 @@ function DocumentModal({ documentItem, onClose }) {
             </button>
           </div>
 
-          {isPdf ? (
+          {showInlinePreview ? (
             <div className="relative overflow-hidden rounded-2xl border border-white/10">
               <iframe
                 src={previewUrl}
                 title={documentItem.title}
-                className="h-[72vh] w-full"
+                className="h-[65vh] w-full md:h-[72vh]"
+                loading="lazy"
               />
             </div>
           ) : (
             <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-sm text-slate-200">
-              Preview works best for PDF files. This file type can be downloaded and opened locally.
+              {isPdf
+                ? 'Inline preview is disabled on smaller screens for faster reading. Open the document in a new tab.'
+                : 'Preview works best for PDF files. This file type can be downloaded and opened locally.'}
             </div>
           )}
 
           <div className="mt-4 flex flex-wrap gap-3">
+            <a
+              href={documentItem.readUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-full border border-white/25 bg-white/10 px-5 py-2 text-sm font-semibold text-slate-100 transition hover:bg-white/15"
+            >
+              {showInlinePreview ? 'Open in new tab' : 'Open document'}
+            </a>
             {documentItem.downloadEnabled ? (
               <a
                 href={documentItem.downloadUrl}
@@ -497,24 +541,26 @@ export default function HomePage() {
       .then((results) => {
         if (!mounted) return
         const [contentResult, blogResult, servicesResult, projectsResult, skillsResult, testimonialsResult, videosResult] = results
-        if (contentResult.status === 'fulfilled' && contentResult.value) {
+        startTransition(() => {
+          if (contentResult.status === 'fulfilled' && contentResult.value) {
           setContent((prev) => ({ ...prev, ...contentResult.value }))
-        }
-        if (blogResult.status === 'fulfilled' && Array.isArray(blogResult.value)) {
+          }
+          if (blogResult.status === 'fulfilled' && Array.isArray(blogResult.value)) {
           setExtraBlogDocuments(blogResult.value)
-        }
-        if (servicesResult.status === 'fulfilled' && Array.isArray(servicesResult.value)) {
+          }
+          if (servicesResult.status === 'fulfilled' && Array.isArray(servicesResult.value)) {
           setServices(
             servicesResult.value.map((item, index) => ({
               ...item,
               icon: item.icon || FALLBACK_SERVICES[index]?.icon || '◈',
             })),
           )
-        }
-        if (projectsResult.status === 'fulfilled' && Array.isArray(projectsResult.value)) setProjects(projectsResult.value)
-        if (skillsResult.status === 'fulfilled' && Array.isArray(skillsResult.value)) setSkills(skillsResult.value)
-        if (testimonialsResult.status === 'fulfilled' && Array.isArray(testimonialsResult.value)) setTestimonials(testimonialsResult.value)
-        if (videosResult.status === 'fulfilled' && Array.isArray(videosResult.value)) setVideos(videosResult.value)
+          }
+          if (projectsResult.status === 'fulfilled' && Array.isArray(projectsResult.value)) setProjects(projectsResult.value)
+          if (skillsResult.status === 'fulfilled' && Array.isArray(skillsResult.value)) setSkills(skillsResult.value)
+          if (testimonialsResult.status === 'fulfilled' && Array.isArray(testimonialsResult.value)) setTestimonials(testimonialsResult.value)
+          if (videosResult.status === 'fulfilled' && Array.isArray(videosResult.value)) setVideos(videosResult.value)
+        })
       })
 
     return () => {
@@ -569,6 +615,14 @@ export default function HomePage() {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [activeVideo, closeVideo])
+
+  useEffect(() => {
+    if (!activeVideo && !activeDocument) {
+      return undefined
+    }
+
+    return lockBodyScroll()
+  }, [activeDocument, activeVideo])
 
   const serviceList = useMemo(() => services.slice(0, 6), [services])
 
@@ -1191,7 +1245,12 @@ export default function HomePage() {
       </footer>
 
       <VideoModal video={activeVideo} onClose={closeVideo} />
-      <DocumentModal documentItem={activeDocument} onClose={() => setActiveDocument(null)} />
+      <DocumentModal
+        documentItem={activeDocument}
+        onClose={() => setActiveDocument(null)}
+        useInlinePreview={!liteMotionMode}
+        liteMotion={liteMotionMode}
+      />
       
       <ConfirmDialog
         isOpen={contactConfirmDialog.isOpen}

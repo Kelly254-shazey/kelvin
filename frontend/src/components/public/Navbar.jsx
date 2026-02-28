@@ -21,6 +21,33 @@ function applyTheme(theme) {
   document.body.classList.add(theme === 'slate' ? 'theme-slate' : 'theme-dark')
 }
 
+function lockBodyScroll() {
+  if (typeof document === 'undefined') return () => {}
+
+  const { body } = document
+  const currentLocks = Number(body.dataset.scrollLockCount || '0')
+
+  if (currentLocks === 0) {
+    body.dataset.scrollLockPreviousOverflow = body.style.overflow || ''
+    body.style.overflow = 'hidden'
+  }
+
+  body.dataset.scrollLockCount = String(currentLocks + 1)
+
+  return () => {
+    const nextLocks = Math.max(Number(body.dataset.scrollLockCount || '1') - 1, 0)
+
+    if (nextLocks === 0) {
+      body.style.overflow = body.dataset.scrollLockPreviousOverflow || ''
+      delete body.dataset.scrollLockCount
+      delete body.dataset.scrollLockPreviousOverflow
+      return
+    }
+
+    body.dataset.scrollLockCount = String(nextLocks)
+  }
+}
+
 export default function Navbar({ brandName = 'KELLYFLO', hireCtaText = 'Hire Me' }) {
   const [theme, setTheme] = useState(() => {
     if (typeof localStorage === 'undefined') return 'dark'
@@ -32,6 +59,14 @@ export default function Navbar({ brandName = 'KELLYFLO', hireCtaText = 'Hire Me'
   useEffect(() => {
     applyTheme(theme)
   }, [theme])
+
+  useEffect(() => {
+    if (!mobileMenuOpen) {
+      return undefined
+    }
+
+    return lockBodyScroll()
+  }, [mobileMenuOpen])
 
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'slate' : 'dark'
@@ -57,7 +92,7 @@ export default function Navbar({ brandName = 'KELLYFLO', hireCtaText = 'Hire Me'
   const mobileLinkClass = 'text-white font-medium hover:text-[#00F5D4] hover:bg-white/10 bg-transparent drop-shadow-[0_1px_6px_rgba(255,255,255,0.3)]'
 
   return (
-    <header className="fixed inset-x-0 top-0 z-[9999] px-4 py-4 md:px-8">
+    <header className="fixed inset-x-0 top-0 z-[60] px-4 py-4 md:px-8">
       <nav
         className={`mx-auto flex w-full max-w-[1240px] items-center justify-between rounded-[24px] border px-6 py-3 backdrop-blur-xl transition-all duration-300 ${navShellClass}`}
       >
